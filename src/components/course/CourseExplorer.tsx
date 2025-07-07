@@ -16,15 +16,13 @@ interface CourseExplorerProps {
   onItemSelect?: (item: SelectedItem | null) => void;
 }
 
-  const CourseExplorer: React.FC<CourseExplorerProps> = ({ selectedItem: externalSelectedItem, onItemSelect }) => {
+const CourseExplorer: React.FC<CourseExplorerProps> = ({ selectedItem: externalSelectedItem, onItemSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [internalSelectedItem, setInternalSelectedItem] = useState<SelectedItem | null>(null);
   const [expandAll, setExpandAll] = useState(true);
   
-  // Use external selected item if provided, otherwise use internal state
   const selectedItem = externalSelectedItem || internalSelectedItem;
 
-  // Calculate total slides and progress
   const courseStats = useMemo(() => {
     let totalSlides = 0;
     let totalModules = 0;
@@ -43,7 +41,6 @@ interface CourseExplorerProps {
     return { totalSlides, totalModules, totalChapters };
   }, []);
 
-  // Filter data based on search term
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return courseData;
 
@@ -89,7 +86,6 @@ interface CourseExplorerProps {
     const item = { type, id, data };
     setInternalSelectedItem(item);
     onItemSelect?.(item);
-    console.log('Selected:', item);
   };
 
   const getSlideCount = (chapters: Chapter[]) => {
@@ -97,8 +93,7 @@ interface CourseExplorerProps {
   };
 
   const getCompletedSlides = (chapters: Chapter[]) => {
-    // Mock completion data - in a real app, this would come from user progress
-    return Math.floor(getSlideCount(chapters) * 0.6); // 60% completion
+    return Math.floor(getSlideCount(chapters) * 0.7);
   };
 
   const renderEmpty = () => (
@@ -107,34 +102,40 @@ interface CourseExplorerProps {
         <SearchIcon />
       </div>
       <p className="course-explorer-empty-text">
-        {searchTerm ? 'No courses found matching your search.' : 'No courses available.'}
+        {searchTerm ? 'No results' : 'No content'}
       </p>
     </div>
   );
 
+  const formatStats = () => {
+    const { totalModules, totalChapters, totalSlides } = courseStats;
+    return `${totalModules}M·${totalChapters}C·${totalSlides}S`;
+  };
+
   if (filteredData.length === 0) {
     return (
-             <div className="course-explorer">
-         <div className="course-explorer-header">
-           <div className="course-explorer-header-content">
-             <h3 className="course-explorer-title">Course Explorer</h3>
-             <p className="course-explorer-subtitle">Browse and search courses</p>
-           </div>
-           <button 
-             className="expand-toggle-btn"
-             onClick={() => setExpandAll(!expandAll)}
-             title={expandAll ? 'Collapse All' : 'Expand All'}
-           >
-             {expandAll ? 'Collapse' : 'Expand'}
-           </button>
-         </div>
-        
+      <div className="course-explorer">
+        <div className="course-explorer-header">
+          <div className="course-explorer-header-content">
+            <h3 className="course-explorer-title">Content</h3>
+            <p className="course-explorer-subtitle">Explorer</p>
+          </div>
+          <button 
+            className="expand-toggle-btn"
+            onClick={() => setExpandAll(!expandAll)}
+          >
+            {expandAll ? '−' : '+'}
+          </button>
+        </div>
+       
         <div className="course-explorer-search">
           <div className="search-input-wrapper">
-            <SearchIcon />
+            <div className="search-icon">
+              <SearchIcon />
+            </div>
             <input
               type="text"
-              placeholder="Search courses, modules, or slides..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -153,17 +154,16 @@ interface CourseExplorerProps {
     <div className="course-explorer">
       <div className="course-explorer-header">
         <div className="course-explorer-header-content">
-          <h3 className="course-explorer-title">Course Explorer</h3>
-                   <p className="course-explorer-subtitle">
-           {courseStats.totalModules} modules • {courseStats.totalChapters} chapters • {courseStats.totalSlides} slides
-         </p>
+          <h3 className="course-explorer-title">Content</h3>
+          <p className="course-explorer-subtitle">
+            {formatStats()}
+          </p>
         </div>
         <button 
           className="expand-toggle-btn"
           onClick={() => setExpandAll(!expandAll)}
-          title={expandAll ? 'Collapse All' : 'Expand All'}
         >
-          {expandAll ? 'Collapse' : 'Expand'}
+          {expandAll ? '−' : '+'}
         </button>
       </div>
       
@@ -174,7 +174,7 @@ interface CourseExplorerProps {
           </div>
           <input
             type="text"
-            placeholder="Search courses, modules, or slides..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -182,55 +182,58 @@ interface CourseExplorerProps {
         </div>
       </div>
 
-             <div className="course-explorer-content">
-         {filteredData.flatMap((subject: Subject) => 
-           subject.modules.map((module: Module) => {
-             const slideCount = getSlideCount(module.chapters);
-             const completedSlides = getCompletedSlides(module.chapters);
-             
-             return (
-               <TreeItem 
-                 key={module.id} 
-                 label={module.name} 
-                 isFolder 
-                 level={0}
-                 itemType="module"
-                 slideCount={slideCount}
-                 completedSlides={completedSlides}
-                 isSelected={selectedItem?.type === 'module' && selectedItem.id === module.id}
-                 onSelect={() => handleItemSelect('module', module.id, module)}
-                 forceExpanded={expandAll}
-               >
-                 {module.chapters.map((chapter: Chapter) => (
-                   <TreeItem 
-                     key={chapter.id} 
-                     label={chapter.name} 
-                     isFolder 
-                     level={1}
-                     itemType="chapter"
-                     slideCount={chapter.slides.length}
-                     isSelected={selectedItem?.type === 'chapter' && selectedItem.id === chapter.id}
-                     onSelect={() => handleItemSelect('chapter', chapter.id, chapter)}
-                     forceExpanded={expandAll}
-                   >
-                     {chapter.slides.map((slide) => (
-                       <TreeItem 
-                         key={slide.id} 
-                         label={slide.name} 
-                         level={2} 
-                         slide={slide}
-                         itemType="slide"
-                         isSelected={selectedItem?.type === 'slide' && selectedItem.id === slide.id}
-                         onSelect={() => handleItemSelect('slide', slide.id, slide)}
-                       />
-                     ))}
-                   </TreeItem>
-                 ))}
-               </TreeItem>
-             );
-           })
-         )}
-       </div>
+      <div className="course-explorer-content">
+        {filteredData.flatMap((subject: Subject) => 
+          subject.modules.map((module: Module) => {
+            const slideCount = getSlideCount(module.chapters);
+            const completedSlides = getCompletedSlides(module.chapters);
+            
+            return (
+              <TreeItem 
+                key={module.id} 
+                label={module.name} 
+                isFolder 
+                level={0}
+                itemType="module"
+                slideCount={slideCount}
+                completedSlides={completedSlides}
+                isSelected={selectedItem?.type === 'module' && selectedItem.id === module.id}
+                onSelect={() => handleItemSelect('module', module.id, module)}
+                forceExpanded={expandAll}
+              >
+                {module.chapters.map((chapter: Chapter) => {
+                  const chapterSlideCount = chapter.slides.length;
+                  return (
+                    <TreeItem 
+                      key={chapter.id} 
+                      label={chapter.name} 
+                      isFolder 
+                      level={1}
+                      itemType="chapter"
+                      slideCount={chapterSlideCount}
+                      isSelected={selectedItem?.type === 'chapter' && selectedItem.id === chapter.id}
+                      onSelect={() => handleItemSelect('chapter', chapter.id, chapter)}
+                      forceExpanded={expandAll}
+                    >
+                      {chapter.slides.map((slide: Slide) => (
+                        <TreeItem 
+                          key={slide.id} 
+                          label={slide.name} 
+                          level={2} 
+                          slide={slide}
+                          itemType="slide"
+                          isSelected={selectedItem?.type === 'slide' && selectedItem.id === slide.id}
+                          onSelect={() => handleItemSelect('slide', slide.id, slide)}
+                        />
+                      ))}
+                    </TreeItem>
+                  );
+                })}
+              </TreeItem>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
