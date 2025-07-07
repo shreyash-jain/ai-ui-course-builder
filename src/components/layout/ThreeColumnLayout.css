@@ -44,7 +44,7 @@
 
 .resize-handle[data-active] {
   background-color: #a0a0a0;
-}
+} 
 
 /* Ensure proper scroll behavior within each panel */
 .panel-content::-webkit-scrollbar {

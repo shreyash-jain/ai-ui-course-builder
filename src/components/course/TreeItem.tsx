@@ -29,9 +29,8 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   completedSlides = 0,
   forceExpanded
 }) => {
-  const [isOpen, setIsOpen] = useState(level <= 1); // Keep subjects and modules open by default
+  const [isOpen, setIsOpen] = useState(level <= 1);
   
-  // Override local state if forceExpanded is provided
   const actualIsOpen = forceExpanded !== undefined ? forceExpanded : isOpen;
 
   const handleToggle = (e: React.MouseEvent) => {
@@ -46,8 +45,8 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   };
 
   const getIndentStyle = () => {
-    const baseIndent = 16;
-    const indentPerLevel = 20;
+    const baseIndent = 8;
+    const indentPerLevel = 12;
     return {
       paddingLeft: `${baseIndent + (level * indentPerLevel)}px`
     };
@@ -55,13 +54,13 @@ export const TreeItem: React.FC<TreeItemProps> = ({
 
   const getBadgeText = () => {
     if (slide) {
-      return slide.type.toUpperCase();
+      return slide.type.substring(0, 3).toUpperCase();
     }
     if (itemType === 'module' && slideCount) {
       return `${completedSlides}/${slideCount}`;
     }
     if (itemType === 'chapter' && slideCount) {
-      return `${slideCount} slides`;
+      return slideCount.toString();
     }
     return null;
   };
@@ -75,7 +74,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
 
   const getProgressPercentage = () => {
     if (slideCount && slideCount > 0) {
-      return (completedSlides / slideCount) * 100;
+      return Math.max(3, (completedSlides / slideCount) * 100);
     }
     return 0;
   };
@@ -85,6 +84,12 @@ export const TreeItem: React.FC<TreeItemProps> = ({
     itemType,
     isSelected ? 'selected' : ''
   ].filter(Boolean).join(' ');
+
+  const truncateLabel = (text: string) => {
+    const maxLength = itemType === 'slide' ? 25 : 30;
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 2) + '..';
+  };
 
   return (
     <>
@@ -121,7 +126,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         </span>
         
         <span className="tree-item-label" title={label}>
-          {label}
+          {truncateLabel(label)}
         </span>
         
         {getBadgeText() && (
@@ -131,7 +136,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         )}
         
         {itemType === 'module' && slideCount && slideCount > 0 && (
-          <div className="module-progress">
+          <div className="module-progress" title={`${Math.round(getProgressPercentage())}% complete`}>
             <div 
               className="module-progress-fill"
               style={{ width: `${getProgressPercentage()}%` }}
